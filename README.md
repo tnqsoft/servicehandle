@@ -7,7 +7,7 @@ Service Rest and Soap Handle for PHP
 ## Setup
 ### Composer
 ```json
-"tnqsoft/servicehandle": "dev-master"
+"tnqsoft/serviceHandle": "dev-master"
 ```
 
 ## Usage
