@@ -1,0 +1,40 @@
+{
+    "name": "tnqsoft/servicehandle",
+    "description": "Service Handle for Rest and Soap API.",
+    "keywords": [
+        "rest client",
+        "soap client",
+        "php",
+        "symfony 3"
+    ],
+    "homepage": "https://github.com/tnqsoft/servicehandle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Nguyen Nhu Tuan",
+            "email": "tuanquynh0508@gmail.com",
+            "homepage": "http://tnqsoft.com/"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "TNQSoft\\ServiceHandle\\": "classes/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-develop": "1.0.0-dev"
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/.*",
+            "/tests",
+            "/vendor",
+            "composer.phar"
+        ]
+    }
+}
