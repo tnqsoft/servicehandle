@@ -7,11 +7,13 @@ class RestResponse
     protected $info;
     protected $header;
     protected $response;
+    protected $error;
 
     public function __construct($info, $response)
     {
         $this->setInfo($info);
         $this->setResponse($response);
+        $this->error = null;
     }
 
     /**
@@ -67,6 +69,12 @@ class RestResponse
      */
     public function setResponse($response)
     {
+        if(empty($response)) {
+            $this->header = null;
+            $this->response = null;
+            return false;
+        }
+
         $parts = explode("\r\n\r\nHTTP/", $response);
         $parts = (count($parts) > 1 ? 'HTTP/' : '').array_pop($parts);
         list($headers, $body) = explode("\r\n\r\n", $parts, 2);
@@ -84,4 +92,34 @@ class RestResponse
 
         return $this;
     }
+
+    public function json($array=false)
+    {
+        return json_decode($this->response, $array);
+    }
+
+    /**
+     * Get the value of Error
+     *
+     * @return mixed
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    /**
+     * Set the value of Error
+     *
+     * @param mixed error
+     *
+     * @return self
+     */
+    public function setError($error)
+    {
+        $this->error = $error;
+
+        return $this;
+    }
+
 }

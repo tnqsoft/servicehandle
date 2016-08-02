@@ -2,6 +2,7 @@
 
 namespace TNQSoft\ServiceHandle\Rest;
 
+use TNQSoft\ServiceHandle\Exception\ProcessException;
 use TNQSoft\ServiceHandle\Exception\TimeoutException;
 
 class RestHandle
@@ -46,12 +47,22 @@ class RestHandle
     /**
      * @var array
      */
+    private $raw;
+
+    /**
+     * @var array
+     */
     private $files;
 
     /**
      * @var array
      */
     private $header;
+
+    /**
+     * @var array
+     */
+    private $cookies;
 
     /**
      * @var int
@@ -64,6 +75,11 @@ class RestHandle
     private $security;
 
     /**
+     * @var curl
+     */
+    private $curl;
+
+    /**
      * __construct.
      *
      * @param string $method
@@ -72,8 +88,9 @@ class RestHandle
      * @param array  $raw
      * @param array  $files
      * @param array  $header
+     * @param array  $cookies
      */
-    public function __construct($method, $url, $params = array(), $raw = array(), $files = array(), $header = array())
+    public function __construct($method, $url, $params = array(), $raw = array(), $files = array(), $header = array(), $cookies=array())
     {
         $this->method = strtoupper($method);
         $this->url = $url;
@@ -81,37 +98,51 @@ class RestHandle
         $this->raw = $raw;
         $this->files = $files;
         $this->header = $header;
+        $this->cookies = $cookies;
         $this->parseUrl();
         $this->security = null;
+        $this->curl = null;
         $this->timeout = ini_get('max_execution_time');
+    }
+
+    public function __destruct()
+    {
+        if(is_resource($this->curl)) {
+            curl_close($this->curl);
+        }
     }
 
     public function request()
     {
         defined('CURLE_OPERATION_TIMEDOUT') || define('CURLE_OPERATION_TIMEDOUT', CURLE_OPERATION_TIMEOUTED);
 
-        $oCurl = $this->createClient();
-        $response = curl_exec($oCurl);
-        $info = curl_getinfo($oCurl);
+        $this->getCurl();
 
-        if (curl_errno($oCurl)) {
+        $response = curl_exec($this->curl);
+        $info = curl_getinfo($this->curl);
+        $oResponse = new RestResponse($info, $response);
+
+        if (curl_errno($this->curl)) {
             $params = 'params: '.json_encode($this->params).';';
             $params .= 'raw: '.json_encode($this->raw).';';
             $params .= 'files: '.json_encode($this->files);
-            if (curl_errno($oCurl) === CURLE_OPERATION_TIMEDOUT) {
-                throw new TimeoutException('Operation timeout', $this->method, $this->url, $params);
+            if (curl_errno($this->curl) === CURLE_OPERATION_TIMEDOUT) {
+                $oResponse->setError(new TimeoutException('Operation timeout', $this->method, $this->url, $params));
+            } else {
+                $oResponse->setError(new ProcessException(curl_error($this->curl), $this->method, $this->url, $params));
             }
         }
-
-        curl_close($oCurl);
-        $oResponse = new RestResponse($info, $response);
 
         return $oResponse;
     }
 
     public function getCurl()
     {
-        return $this->createClient();
+        if(empty($this->curl)) {
+            $this->createClient();
+        }
+
+        return $this->curl;
     }
 
     public function setSecurity(RestSecurityHandle $security)
@@ -186,10 +217,11 @@ class RestHandle
             }
         }
 
+        curl_setopt($oCurl, CURLOPT_COOKIE, str_replace('+', '%20', http_build_query($this->cookies, '', '; ')));
         curl_setopt($oCurl, CURLOPT_HTTPHEADER, $this->header);
         curl_setopt($oCurl, CURLOPT_TIMEOUT, $this->timeout);
 
-        return $oCurl;
+        $this->curl = $oCurl;
     }
 
     private function parseUrl()
@@ -210,4 +242,55 @@ class RestHandle
             }
         }
     }
+
+    /**
+     * Get the value of Method
+     *
+     * @return string
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+    /**
+     * Get the value of Url
+     *
+     * @return string
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * Get the value of Params
+     *
+     * @return array
+     */
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    /**
+     * Get the value of Raw
+     *
+     * @return array
+     */
+    public function getRaw()
+    {
+        return $this->raw;
+    }
+
+    /**
+     * Get the value of Files
+     *
+     * @return array
+     */
+    public function getFiles()
+    {
+        return $this->files;
+    }
+
 }

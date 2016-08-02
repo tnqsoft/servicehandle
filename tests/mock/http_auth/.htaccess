@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "Restricted Content"
+AuthUserFile C:\projects\servicehandle-bundle\lab\http_auth\.htpasswd
+Require valid-user
